@@ -1,5 +1,4 @@
 ﻿using dnlib.DotNet;
-using dnlib.DotNet.Emit;
 
 if (args.Length < 1)
 {
@@ -9,12 +8,31 @@ if (args.Length < 1)
 
 var assemblyFile = args[0];
 var targetDirectory = args.ElementAtOrDefault(1) ?? Directory.GetCurrentDirectory();
-
+var strings = new List<string>();
 ModuleContext modCtx = ModuleDef.CreateModuleContext();
 ModuleDefMD module = ModuleDefMD.Load(assemblyFile, modCtx);
 var metadata = module.Metadata;
 DumpMetadata(targetDirectory);
 Console.WriteLine($"Metadata for the assembly {assemblyFile} saved to {targetDirectory}");
+File.WriteAllLines(Path.Combine(targetDirectory, "MetadataStrings.csv"), strings.Where(_ => !IsCompilerGenerated(_)).Select(FilterNames).OrderBy(_ => _).Distinct());
+
+bool IsCompilerGenerated(string metadataString)
+{
+    return metadataString.StartsWith("<") || metadataString.StartsWith(".");
+}
+
+string FilterNames(string name)
+{
+    if (name.StartsWith("get_") || name.StartsWith("set_"))
+        name = name[4..];
+    if (name.StartsWith("s_"))
+        name = name[2..];
+    name = name.TrimStart('_');
+    if (name.Length > 0)
+        if (!char.IsUpper(name[0]))
+            return char.ToUpper(name[0]) + name.Substring(1);
+    return name;
+}
 
 void DumpMetadata(string folder)
 {
@@ -81,7 +99,11 @@ void PrintAssemblyTable(TextWriter writer)
     for (uint i = 1; i <= metadata.TablesStream.AssemblyTable.Rows; i++)
     {
         metadata.TablesStream.TryReadAssemblyRow(i, out var assemblyRow);
-        writer.WriteLine($"{i},{(AssemblyHashAlgorithm)assemblyRow.HashAlgId},{assemblyRow.MajorVersion},{assemblyRow.MinorVersion},{assemblyRow.BuildNumber},{assemblyRow.RevisionNumber},{assemblyRow.Flags},{GetBytes(assemblyRow.PublicKey)},{GetName(assemblyRow.Name)},{GetName(assemblyRow.Locale)}");
+        var name = GetName(assemblyRow.Name);
+        AddString(name);
+        var locale = GetName(assemblyRow.Locale);
+        AddString(locale);
+        writer.WriteLine($"{i},{(AssemblyHashAlgorithm)assemblyRow.HashAlgId},{assemblyRow.MajorVersion},{assemblyRow.MinorVersion},{assemblyRow.BuildNumber},{assemblyRow.RevisionNumber},{assemblyRow.Flags},{GetBytes(assemblyRow.PublicKey)},{name},{locale}");
     }
 
     writer.Flush();
@@ -93,7 +115,11 @@ void PrintAssemblyRefTable(TextWriter writer)
     for (var i = 1; i <= metadata.TablesStream.AssemblyRefTable.Rows; i++)
     {
         metadata.TablesStream.TryReadAssemblyRefRow(1, out var assemblyRow);
-        writer.WriteLine($"{i},{assemblyRow.MajorVersion},{assemblyRow.MinorVersion},{assemblyRow.BuildNumber},{assemblyRow.RevisionNumber},{assemblyRow.Flags},{GetPublicKeyOrToken(assemblyRow.Flags, assemblyRow.PublicKeyOrToken)},{GetName(assemblyRow.Name)},{GetName(assemblyRow.Locale)}");
+        var name = GetName(assemblyRow.Name);
+        AddReferencedString(name);
+        var locale = GetName(assemblyRow.Locale);
+        AddReferencedString(locale);
+        writer.WriteLine($"{i},{assemblyRow.MajorVersion},{assemblyRow.MinorVersion},{assemblyRow.BuildNumber},{assemblyRow.RevisionNumber},{assemblyRow.Flags},{GetPublicKeyOrToken(assemblyRow.Flags, assemblyRow.PublicKeyOrToken)},{name},{locale}");
     }
 
     writer.Flush();
@@ -105,7 +131,9 @@ void PrintModuleTable(TextWriter writer)
     for (uint i = 1; i <= metadata.TablesStream.ModuleTable.Rows; i++)
     {
         metadata.TablesStream.TryReadModuleRow(i, out var row);
-        writer.WriteLine($"{i},{row.Generation},{GetName(row.Name)},{row.Mvid},{row.EncId},{row.EncBaseId}");
+        var name = GetName(row.Name);
+        AddFileString(name);
+        writer.WriteLine($"{i},{row.Generation},{name},{row.Mvid},{row.EncId},{row.EncBaseId}");
     }
 
     writer.Flush();
@@ -117,7 +145,11 @@ void PrintTypeRefTable(TextWriter writer)
     for (uint i = 1; i <= metadata.TablesStream.TypeRefTable.Rows; i++)
     {
         metadata.TablesStream.TryReadTypeRefRow(i, out var row);
-        writer.WriteLine($"{i},{row.ResolutionScope},{GetName(row.Name)},{GetName(row.Namespace)}");
+        var name = GetName(row.Name);
+        AddReferencedString(name);
+        var ns = GetName(row.Namespace);
+        AddReferencedString(ns);
+        writer.WriteLine($"{i},{row.ResolutionScope},{name},{ns}");
     }
 
     writer.Flush();
@@ -129,7 +161,11 @@ void PrintTypeDefTable(TextWriter writer)
     for (uint i = 1; i <= metadata.TablesStream.TypeDefTable.Rows; i++)
     {
         metadata.TablesStream.TryReadTypeDefRow(i, out var row);
-        writer.WriteLine($"{i},{row.Flags},{GetName(row.Name)},{GetName(row.Namespace)},{row.Extends},{row.FieldList},{row.MethodList}");
+        var name = GetName(row.Name);
+        AddString(name);
+        var ns = GetName(row.Namespace);
+        AddString(ns);
+        writer.WriteLine($"{i},{row.Flags},{name},{ns},{row.Extends},{row.FieldList},{row.MethodList}");
     }
 
     writer.Flush();
@@ -155,7 +191,9 @@ void PrintFieldTable(TextWriter writer)
     for (uint i = 1; i <= table.Rows; i++)
     {
         metadata.TablesStream.TryReadFieldRow(i, out var row);
-        writer.WriteLine($"{i},{row.Flags},{GetName(row.Name)},{row.Signature}");
+        var name = GetName(row.Name);
+        AddString(name);
+        writer.WriteLine($"{i},{row.Flags},{name},{row.Signature}");
     }
 
     writer.Flush();
@@ -181,7 +219,9 @@ void PrintMethodTable(TextWriter writer)
     for (uint i = 1; i <= table.Rows; i++)
     {
         metadata.TablesStream.TryReadMethodRow(i, out var row);
-        writer.WriteLine($"{i},{row.RVA},{row.ImplFlags},{row.Flags},{GetName(row.Name)},{row.Signature},{row.ParamList}");
+        var name = GetName(row.Name);
+        AddString(name);
+        writer.WriteLine($"{i},{row.RVA},{row.ImplFlags},{row.Flags},{name},{row.Signature},{row.ParamList}");
     }
 
     writer.Flush();
@@ -207,7 +247,9 @@ void PrintParamTable(TextWriter writer)
     for (uint i = 1; i <= table.Rows; i++)
     {
         metadata.TablesStream.TryReadParamRow(i, out var row);
-        writer.WriteLine($"{i},{row.Flags},{row.Sequence},{GetName(row.Name)}");
+        var name = GetName(row.Name);
+        AddString(name);
+        writer.WriteLine($"{i},{row.Flags},{row.Sequence},{name}");
     }
 
     writer.Flush();
@@ -233,7 +275,9 @@ void PrintMemberRefTable(TextWriter writer)
     for (uint i = 1; i <= table.Rows; i++)
     {
         metadata.TablesStream.TryReadMemberRefRow(i, out var row);
-        writer.WriteLine($"{i},{row.Class},{GetName(row.Name)},{row.Signature}");
+        var name = GetName(row.Name);
+        AddReferencedString(name);
+        writer.WriteLine($"{i},{row.Class},{name},{row.Signature}");
     }
 
     writer.Flush();
@@ -364,7 +408,9 @@ void PrintEventTable(TextWriter writer)
     for (uint i = 1; i <= table.Rows; i++)
     {
         metadata.TablesStream.TryReadEventRow(i, out var row);
-        writer.WriteLine($"{i},{row.EventFlags},{GetName(row.Name)},{row.EventType}");
+        var name = GetName(row.Name);
+        AddString(name);
+        writer.WriteLine($"{i},{row.EventFlags},{name},{row.EventType}");
     }
 
     writer.Flush();
@@ -403,7 +449,9 @@ void PrintPropertyTable(TextWriter writer)
     for (uint i = 1; i <= table.Rows; i++)
     {
         metadata.TablesStream.TryReadPropertyRow(i, out var row);
-        writer.WriteLine($"{i},{row.PropFlags},{GetName(row.Name)},{row.Type}");
+        var name = GetName(row.Name);
+        AddString(name);
+        writer.WriteLine($"{i},{row.PropFlags},{name},{row.Type}");
     }
 
     writer.Flush();
@@ -416,7 +464,9 @@ void PrintModuleRefTable(TextWriter writer)
     for (uint i = 1; i <= table.Rows; i++)
     {
         metadata.TablesStream.TryReadModuleRefRow(i, out var row);
-        writer.WriteLine($"{i},{GetName(row.Name)}");
+        var name = GetName(row.Name);
+        AddReferencedString(name);
+        writer.WriteLine($"{i},{name}");
     }
 
     writer.Flush();
@@ -429,7 +479,11 @@ void PrintExportedTypeTable(TextWriter writer)
     for (uint i = 1; i <= table.Rows; i++)
     {
         metadata.TablesStream.TryReadExportedTypeRow(i, out var row);
-        writer.WriteLine($"{i},{row.Flags},{row.TypeDefId},{GetName(row.TypeName)},{GetName(row.TypeNamespace)},{row.Implementation}");
+        var typeName = GetName(row.TypeName);
+        AddString(typeName);
+        var typeNamespace = GetName(row.TypeNamespace);
+        AddString(typeNamespace);
+        writer.WriteLine($"{i},{row.Flags},{row.TypeDefId},{typeName},{typeNamespace},{row.Implementation}");
     }
 
     writer.Flush();
@@ -442,7 +496,9 @@ void PrintManifestResourceTable(TextWriter writer)
     for (uint i = 1; i <= table.Rows; i++)
     {
         metadata.TablesStream.TryReadManifestResourceRow(i, out var row);
-        writer.WriteLine($"{i},{row.Offset},{row.Flags},{GetName(row.Name)},{row.Implementation}");
+        var name = GetName(row.Name);
+        AddFileString(name);
+        writer.WriteLine($"{i},{row.Offset},{row.Flags},{name},{row.Implementation}");
     }
 
     writer.Flush();
@@ -468,7 +524,9 @@ void PrintGenericParamTable(TextWriter writer)
     for (uint i = 1; i <= table.Rows; i++)
     {
         metadata.TablesStream.TryReadGenericParamRow(i, out var row);
-        writer.WriteLine($"{i},{row.Number},{row.Flags},{row.Owner},{GetName(row.Name)},{row.Kind}");
+        var name = GetName(row.Name);
+        AddString(name);
+        writer.WriteLine($"{i},{row.Number},{row.Flags},{row.Owner},{name},{row.Kind}");
     }
 
     writer.Flush();
@@ -507,4 +565,17 @@ string? GetValue(ElementType type, uint code)
         ElementType.String => reader.ReadUtf16String((int)(reader.BytesLeft / 2)),
         _ => null,
     };
+}
+
+void AddString(string value)
+{
+    strings.Add(value);
+}
+void AddReferencedString(string value)
+{
+    //strings.Add(value);
+}
+void AddFileString(string value)
+{
+    //strings.Add(value);
 }
