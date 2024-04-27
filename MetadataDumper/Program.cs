@@ -14,10 +14,12 @@ ModuleContext modCtx = ModuleDef.CreateModuleContext();
 ModuleDefMD module = ModuleDefMD.Load(assemblyFile, modCtx);
 var metadata = module.Metadata;
 DumpMetadata(targetDirectory);
+Console.WriteLine($"Metadata for the assembly {assemblyFile} saved to {targetDirectory}");
 
 void DumpMetadata(string folder)
 {
-    PrintModuleTable(new StreamWriter(File.Open(Path.Combine(folder, Path.Combine(folder, "Module.csv")), FileMode.Create)));
+    Directory.CreateDirectory(targetDirectory);
+    PrintModuleTable(new StreamWriter(File.Open(Path.Combine(folder, "Module.csv"), FileMode.Create)));
     PrintTypeRefTable(new StreamWriter(File.Open(Path.Combine(folder, "TypeRef.csv"), FileMode.Create)));
     PrintTypeDefTable(new StreamWriter(File.Open(Path.Combine(folder, "TypeDef.csv"), FileMode.Create)));
     PrintFieldPtrTable(new StreamWriter(File.Open(Path.Combine(folder, "FieldPtr.csv"), FileMode.Create)));
