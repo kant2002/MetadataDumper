@@ -14,17 +14,24 @@ ModuleDefMD module = ModuleDefMD.Load(assemblyFile, modCtx);
 var metadata = module.Metadata;
 DumpMetadata(targetDirectory);
 Console.WriteLine($"Metadata for the assembly {assemblyFile} saved to {targetDirectory}");
-var normalizedStrings = strings.Where(_ => !IsCompilerGenerated(_)).Select(FilterNames);
-var uniqueStrings = normalizedStrings.OrderBy(_ => _).Distinct();
+var normalizedStrings = strings.Where(_ => !IsCompilerGenerated(_));
+var uniqueStrings = normalizedStrings.Select(FilterNames).OrderBy(_ => _).Distinct();
 var auxFolder = Path.Combine(targetDirectory, "auxillary");
 Directory.CreateDirectory(auxFolder);
 File.WriteAllLines(Path.Combine(auxFolder, "MetadataStrings.csv"), uniqueStrings);
-File.WriteAllLines(Path.Combine(auxFolder, "MetadataWords.csv"), new[] { "Word,Count" }.Union(normalizedStrings.SelectMany(ParseTokens).OrderBy(_ => _).GroupBy(_ => _).Select(_ => $"{_.Key},{_.Count()}")).ToArray());
+File.WriteAllLines(Path.Combine(auxFolder, "MetadataWords.csv"), new[] { "Word,Count" }.Union(normalizedStrings.SelectMany(ParseTokens).Select(FilterNames).OrderBy(_ => _).GroupBy(_ => _).Select(_ => $"{_.Key},{_.Count()}")).ToArray());
 
 
 bool IsCompilerGenerated(string metadataString)
 {
-    return metadataString.StartsWith("<") || metadataString.StartsWith(".");
+    return metadataString.Contains("<")
+        || metadataString.Contains(".")
+        || metadataString.Contains("@")
+        || metadataString.Contains("~")
+        || metadataString.Contains("?")
+        || metadataString.Contains("$")
+        || metadataString.Contains("{")
+        || (metadataString.Length > 0 && char.IsDigit(metadataString[0]));
 }
 
 string FilterNames(string name)
@@ -61,7 +68,7 @@ IEnumerable<string> ParseTokens(string text)
     string? accum = null;
     for (var i = 0; i < text.Length; i++)
     {
-        if (char.IsDigit(text[i]) || text[i] == '_')
+        if (char.IsDigit(text[i]) || text[i] == '_' || text[i] == '`' || text[i] == '<' || text[i] == '>')
         {
             if (accum is not null)
                 yield return accum;

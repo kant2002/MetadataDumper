@@ -7,3 +7,9 @@ Dump .NET metadata information into CSV files. Each metadata table saved to sepa
 ```
 dotnet run "C:\Program Files\dotnet\shared\Microsoft.AspNetCore.App\8.0.4\Microsoft.AspNetCore.Authentication.Abstractions.dll" Microsoft.AspNetCore.Authentication.Abstractions
 ```
+
+## Collect statistcis about words from .NET distribution
+
+```
+.\summary.ps1
+```
