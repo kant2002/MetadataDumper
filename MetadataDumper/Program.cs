@@ -19,7 +19,7 @@ var uniqueStrings = normalizedStrings.Select(FilterNames).OrderBy(_ => _).Distin
 var auxFolder = Path.Combine(targetDirectory, "auxillary");
 Directory.CreateDirectory(auxFolder);
 File.WriteAllLines(Path.Combine(auxFolder, "MetadataStrings.csv"), uniqueStrings);
-File.WriteAllLines(Path.Combine(auxFolder, "MetadataWords.csv"), new[] { "Word,Count" }.Union(normalizedStrings.SelectMany(ParseTokens).Select(FilterNames).OrderBy(_ => _).GroupBy(_ => _).Select(_ => $"{_.Key},{_.Count()}")).ToArray());
+File.WriteAllLines(Path.Combine(auxFolder, "MetadataWords.csv"), new[] { "Word,Count" }.Union(normalizedStrings.SelectMany(ParseTokens).Select(FilterNames).OrderBy(_ => _).GroupBy(_ => _).Where(_ => _.Key.Length > 1).Select(_ => $"{_.Key},{_.Count()}")).ToArray());
 
 
 bool IsCompilerGenerated(string metadataString)
