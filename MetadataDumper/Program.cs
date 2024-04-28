@@ -14,7 +14,13 @@ ModuleDefMD module = ModuleDefMD.Load(assemblyFile, modCtx);
 var metadata = module.Metadata;
 DumpMetadata(targetDirectory);
 Console.WriteLine($"Metadata for the assembly {assemblyFile} saved to {targetDirectory}");
-File.WriteAllLines(Path.Combine(targetDirectory, "MetadataStrings.csv"), strings.Where(_ => !IsCompilerGenerated(_)).Select(FilterNames).OrderBy(_ => _).Distinct());
+var normalizedStrings = strings.Where(_ => !IsCompilerGenerated(_)).Select(FilterNames);
+var uniqueStrings = normalizedStrings.OrderBy(_ => _).Distinct();
+var auxFolder = Path.Combine(targetDirectory, "auxillary");
+Directory.CreateDirectory(auxFolder);
+File.WriteAllLines(Path.Combine(auxFolder, "MetadataStrings.csv"), uniqueStrings);
+File.WriteAllLines(Path.Combine(auxFolder, "MetadataWords.csv"), new[] { "Word,Count" }.Union(normalizedStrings.SelectMany(ParseTokens).OrderBy(_ => _).GroupBy(_ => _).Select(_ => $"{_.Key},{_.Count()}")).ToArray());
+
 
 bool IsCompilerGenerated(string metadataString)
 {
@@ -32,6 +38,49 @@ string FilterNames(string name)
         if (!char.IsUpper(name[0]))
             return char.ToUpper(name[0]) + name.Substring(1);
     return name;
+}
+
+IEnumerable<string> ParseTokens(string text)
+{
+    if (text.Length == 0 || text == "AspNetCore")
+    {
+        yield return text;
+        yield break;
+    }
+
+    if (text.Contains('.'))
+    {
+        foreach (var item in text.Split('.').SelectMany(ParseTokens))
+        {
+            yield return item;
+        }
+
+        yield break;
+    }
+
+    string? accum = null;
+    for (var i = 0; i < text.Length; i++)
+    {
+        if (char.IsDigit(text[i]) || text[i] == '_')
+        {
+            if (accum is not null)
+                yield return accum;
+            accum = null;
+        }
+        else if (char.IsUpper(text[i]))
+        {
+            if (accum is not null)
+                yield return accum;
+            accum = text[i].ToString();
+        }
+        else
+        {
+            accum += text[i];
+        }
+    }
+
+    if (accum is not null)
+        yield return accum;
 }
 
 void DumpMetadata(string folder)
