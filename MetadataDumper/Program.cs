@@ -234,7 +234,7 @@ void PrintFieldPtrTable(TextWriter writer)
     for (uint i = 1; i <= table.Rows; i++)
     {
         metadata.TablesStream.TryReadFieldPtrRow(i, out var row);
-        writer.WriteLine($"{i},{GetName(row.Field)}");
+        writer.WriteLine($"{i},{row.Field}");
     }
 
     writer.Flush();
@@ -262,7 +262,7 @@ void PrintMethodPtrTable(TextWriter writer)
     for (uint i = 1; i <= table.Rows; i++)
     {
         metadata.TablesStream.TryReadMethodPtrRow(i, out var row);
-        writer.WriteLine($"{i},{GetName(row.Method)}");
+        writer.WriteLine($"{i},{row.Method}");
     }
 
     writer.Flush();
@@ -290,7 +290,7 @@ void PrintParamPtrTable(TextWriter writer)
     for (uint i = 1; i <= table.Rows; i++)
     {
         metadata.TablesStream.TryReadParamPtrRow(i, out var row);
-        writer.WriteLine($"{i},{GetName(row.Param)}");
+        writer.WriteLine($"{i},{row.Param}");
     }
 
     writer.Flush();
@@ -451,7 +451,7 @@ void PrintEventPtrTable(TextWriter writer)
     for (uint i = 1; i <= table.Rows; i++)
     {
         metadata.TablesStream.TryReadEventPtrRow(i, out var row);
-        writer.WriteLine($"{i},{GetName(row.Event)}");
+        writer.WriteLine($"{i},{row.Event}");
     }
 
     writer.Flush();
@@ -492,7 +492,7 @@ void PrintPropertyPtrTable(TextWriter writer)
     for (uint i = 1; i <= table.Rows; i++)
     {
         metadata.TablesStream.TryReadPropertyPtrRow(i, out var row);
-        writer.WriteLine($"{i},{GetName(row.Property)}");
+        writer.WriteLine($"{i},{row.Property}");
     }
 
     writer.Flush();
