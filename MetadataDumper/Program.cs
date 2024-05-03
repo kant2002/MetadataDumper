@@ -1,4 +1,5 @@
 ﻿using dnlib.DotNet;
+using MetadataDumper;
 
 if (args.Length < 1)
 {
@@ -19,7 +20,8 @@ var uniqueStrings = normalizedStrings.Select(FilterNames).OrderBy(_ => _).Distin
 var auxFolder = Path.Combine(targetDirectory, "auxillary");
 Directory.CreateDirectory(auxFolder);
 File.WriteAllLines(Path.Combine(auxFolder, "MetadataStrings.csv"), uniqueStrings);
-File.WriteAllLines(Path.Combine(auxFolder, "MetadataWords.csv"), new[] { "Word,Count" }.Union(normalizedStrings.SelectMany(ParseTokens).Select(FilterNames).OrderBy(_ => _).GroupBy(_ => _).Where(_ => _.Key.Length > 1).Select(_ => $"{_.Key},{_.Count()}")).ToArray());
+var tokenizer = new Tokenizer();
+File.WriteAllLines(Path.Combine(auxFolder, "MetadataWords.csv"), new[] { "Word,Count" }.Union(normalizedStrings.SelectMany(tokenizer.ParseTokens).Select(FilterNames).OrderBy(_ => _).GroupBy(_ => _).Where(_ => _.Key.Length > 1).Select(_ => $"{_.Key},{_.Count()}")).ToArray());
 
 
 bool IsCompilerGenerated(string metadataString)
@@ -45,49 +47,6 @@ string FilterNames(string name)
         if (!char.IsUpper(name[0]))
             return char.ToUpper(name[0]) + name.Substring(1);
     return name;
-}
-
-IEnumerable<string> ParseTokens(string text)
-{
-    if (text.Length == 0 || text == "AspNetCore")
-    {
-        yield return text;
-        yield break;
-    }
-
-    if (text.Contains('.'))
-    {
-        foreach (var item in text.Split('.').SelectMany(ParseTokens))
-        {
-            yield return item;
-        }
-
-        yield break;
-    }
-
-    string? accum = null;
-    for (var i = 0; i < text.Length; i++)
-    {
-        if (char.IsDigit(text[i]) || text[i] == '_' || text[i] == '`' || text[i] == '<' || text[i] == '>')
-        {
-            if (accum is not null)
-                yield return accum;
-            accum = null;
-        }
-        else if (char.IsUpper(text[i]))
-        {
-            if (accum is not null)
-                yield return accum;
-            accum = text[i].ToString();
-        }
-        else
-        {
-            accum += text[i];
-        }
-    }
-
-    if (accum is not null)
-        yield return accum;
 }
 
 void DumpMetadata(string folder)
