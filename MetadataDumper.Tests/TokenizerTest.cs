@@ -44,6 +44,13 @@ public class TokenizerTest
             yield return new object[] { "Action`1", new[] { "Action" } };
             yield return new object[] { "Tcp4", new[] { "Tcp" } };
             yield return new object[] { "TContainerBuilder", new[] { "T", "Container", "Builder" } };
+            yield return new object[] { "IPAddress", new[] { "IP", "Address" } };
+            yield return new object[] { "IP", new[] { "IP" } };
+            yield return new object[] { "DesignerURL", new[] { "Designer", "URL" } };
+            yield return new object[] { "BASESCRIPTRECORD", new[] { "BASESCRIPTRECORD" } };
+            yield return new object[] { "BASECOORDFORMAT2", new[] { "BASECOORDFORMAT" } };
+            yield return new object[] { "CMAP_FORMAT0", new[] { "CMAP", "FORMAT" } };
+            yield return new object[] { "Char_Glyph_Map_List", new[] { "Char", "Glyph", "Map", "List" } };
         }
     }
 }
