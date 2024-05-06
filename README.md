@@ -74,3 +74,8 @@ assuming obviously that you understand programming concepts already. And if you 
 | 486 | 75% |
 | 600 | 78% |
 | 1500 | 91% |
+
+
+# References
+
+- https://download.wikdict.com/dictionaries/sqlite/2_2024-03/

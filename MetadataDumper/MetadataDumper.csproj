@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <PackageReference Include="dnlib" Version="4.4.0" />
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="9.0.0-preview.3.24172.4" />
   </ItemGroup>
 
 </Project>
