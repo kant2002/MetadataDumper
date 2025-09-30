@@ -6,4 +6,5 @@
   </Folder>
   <Project Path="MetadataDumper.Tests/MetadataDumper.Tests.csproj" />
   <Project Path="MetadataDumper/MetadataDumper.csproj" />
+  <Project Path="MetadataRewriter/MetadataRewriter.csproj" Id="0dd79e2e-4017-4d6c-a615-277763fd1492" />
 </Solution>
