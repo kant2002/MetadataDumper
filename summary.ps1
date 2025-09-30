@@ -1,10 +1,11 @@
 Param(
     [Parameter(Mandatory=$false)]
     [string] $OutFolder = "out",
-    [string] $Version = "8.0.4"
+    [string] $Version = "8.0.4",
+    [switch] $DoNotProcess
 )
 
-if ($false)
+if (-not $DoNotProcess)
 {
     .\process.ps1 -PackName Microsoft.AspNetCore.App -Version $Version -OutFolder $OutFolder
     .\process.ps1 -PackName Microsoft.NETCore.App -Version $Version -OutFolder $OutFolder
