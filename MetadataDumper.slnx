@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path="process.ps1" />
+    <File Path="README.md" />
+    <File Path="summary.ps1" />
+  </Folder>
+  <Project Path="MetadataDumper.Tests/MetadataDumper.Tests.csproj" />
+  <Project Path="MetadataDumper/MetadataDumper.csproj" />
+</Solution>
