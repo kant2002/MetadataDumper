@@ -19,8 +19,8 @@ var rewriter = new Rewriter(module);
 string typeRenamesPath = Path.Combine(targetDirectory, "TypeRenames.csv");
 if (Path.Exists(typeRenamesPath))
 {
-    var typeRewriteRules = LoadRules(typeRenamesPath);
-    rewriter.RewriteTypes(typeRewriteRules.ToDictionary(_ => _.TokenHandle, _ => _.NewName));
+    var typeRewriteRules = LoadDictionaryRules(typeRenamesPath);
+    rewriter.RewriteTypes(typeRewriteRules);
 }
 
 if (Path.Exists(Path.Combine(targetDirectory, "TypeRenamesByName.csv")))
@@ -31,8 +31,8 @@ if (Path.Exists(Path.Combine(targetDirectory, "TypeRenamesByName.csv")))
 
 if (Path.Exists(Path.Combine(targetDirectory, "MethodRenames.csv")))
 {
-    var methodRewriteRules = LoadRules(Path.Combine(targetDirectory, "MethodRenames.csv"));
-    rewriter.RewriteMethods(methodRewriteRules.ToDictionary(_ => _.TokenHandle, _ => _.NewName));
+    var methodRewriteRules = LoadDictionaryRules(typeRenamesPath);
+    rewriter.RewriteMethods(methodRewriteRules);
 }
 
 module.Write(targetFile);
@@ -58,6 +58,25 @@ List<MetadataRewriteRule> LoadRules(string filePath)
                 OldName = parts[1],
                 NewName = parts[2]
             });
+        }
+    }
+    return rules;
+}
+
+// Function which read list of MetadataRewriteRule from specific CSV file
+Dictionary<uint, string> LoadDictionaryRules(string filePath)
+{
+    var lines = File.ReadAllLines(filePath);
+    var rules = new Dictionary<uint, string>();
+    foreach (var line in lines.Skip(1)) // Skip header
+    {
+        var parts = line.Split(',');
+        uint tokenHandle;
+        if (parts.Length == 2 &&
+            (uint.TryParse(parts[0], out tokenHandle) || uint.TryParse(parts[0][2..], NumberStyles.AllowHexSpecifier, null, out tokenHandle)) &&
+            !string.IsNullOrWhiteSpace(parts[1]))
+        {
+            rules.Add(tokenHandle, parts[1]);
         }
     }
     return rules;
