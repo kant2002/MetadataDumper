@@ -68,4 +68,4 @@ assuming obviously that you understand programming concepts already. And if you 
 
 # References
 
-- https://download.wikdict.com/dictionaries/sqlite/2_2024-03/
+- https://download.wikdict.com/dictionaries/sqlite/2_2024-03/en.sqlite3
